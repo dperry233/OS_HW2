@@ -272,6 +272,7 @@ static inline void activate_task(task_t *p, runqueue_t *rq)
 		if (p->sleep_avg > MAX_SLEEP_AVG)
 			p->sleep_avg = MAX_SLEEP_AVG;
 		p->prio = effective_prio(p);
+		}
 	}
 	enqueue_task(p, array);
 	rq->nr_running++;
