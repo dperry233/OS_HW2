@@ -138,7 +138,7 @@ struct runqueue {
 	unsigned long nr_running, nr_switches, expired_timestamp;
 	signed long nr_uninterruptible;
 	task_t *curr, *idle;
-	prio_array_t *active, *expired,*active_short,*expired_short, arrays[2];		// SHORT SCHED
+	prio_array_t *active, *expired, arrays[2];
 	int prev_nr_running[NR_CPUS];
 	task_t *migration_thread;
 	list_t migration_queue;
