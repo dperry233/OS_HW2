@@ -112,6 +112,9 @@
 #define TASK_TIMESLICE(p) (MIN_TIMESLICE + \
 	((MAX_TIMESLICE - MIN_TIMESLICE) * (MAX_PRIO-1-(p)->static_prio)/39))
 
+#define OVERSHORT_TIMESLICE(p) (10*(140-(p)->prio)))							// SHORT SCHED
+
+
 /*
  * These are the runqueue data structures:
  */
@@ -138,7 +141,7 @@ struct runqueue {
 	unsigned long nr_running, nr_switches, expired_timestamp;
 	signed long nr_uninterruptible;
 	task_t *curr, *idle;
-	prio_array_t *active, *expired,*active_short,*expired_short, arrays[4];		// SHORT SCHED
+	prio_array_t *active, *expired,*active_short,*overdue_short, arrays[4];		// SHORT SCHED
 	int prev_nr_running[NR_CPUS];
 	task_t *migration_thread;
 	list_t migration_queue;
@@ -255,11 +258,18 @@ static inline int effective_prio(task_t *p)
 static inline void activate_task(task_t *p, runqueue_t *rq)
 {
 	unsigned long sleep_time = jiffies - p->sleep_timestamp;
+	prio_array_t *array;
 	if (p->policy == SCHED_SHORT){
-		prio_array_t *array = rq->active_short;									// SHORT SCHED
+		if (p->overdue){
+			array = rq->overdue_short;
+		}
+		else{
+			array = rq->active_short;								// SHORT SCHED
+		}
+
 	}
 	else{
-		prio_array_t *array = rq->active;
+		array = rq->active;
 		if (!rt_task(p) && sleep_time) {
 		/*
 		 * This code gives a bonus to interactive tasks. We update
@@ -743,27 +753,54 @@ void scheduler_tick(int user_tick, int system)
 	kstat.per_cpu_system[cpu] += system;
 
 	/* Task might have expired already, but not scheduled off yet */
-	if (p->array != rq->active) {
+	if (p->array == rq->expired) {			// changed to be more spesiffic
 		set_tsk_need_resched(p);
 		return;
 	}
 	spin_lock(&rq->lock);
-	if (unlikely(rt_task(p))) {
-		/*
-		 * RR tasks need a special form of timeslice management.
-		 * FIFO tasks have no timeslices.
-		 */
-		if ((p->policy == SCHED_RR) && !--p->time_slice) {
-			p->time_slice = TASK_TIMESLICE(p);
-			p->first_time_slice = 0;
-			set_tsk_need_resched(p);
-
-			/* put it at the end of the queue: */
-			dequeue_task(p, rq->active);
-			enqueue_task(p, rq->active);
+	// DEALS WITH SCHED_SHORT
+	if (p->policy == SCHED_SHORT){
+		if(!p->overdue){
+			if ((++(p->current_time)) == p->requested_time)){
+				// the SHORT is now become OVERDUE
+				p->overdue=true;
+				p->prio=0;							// all overdue are equal prio
+				dequeue_task(p, rq->active_short);
+				enqueue_task(p, rq->overdue_short);
+			}
+		}
+		else{
+			if ((!--p->time_slice)){
+				// DEALS WITH OVERDUE_SHORT
+				p->time_slice = OVERSHORT_TIMESLICE(p);
+				p->first_time_slice = 0;
+				set_tsk_need_resched(p);
+				/* put it at the end of the queue: */
+				dequeue_task(p, rq->overdue_short);
+				enqueue_task(p, rq->overdue_short);
+			}
 		}
 		goto out;
 	}
+	else{
+		if (unlikely(rt_task(p))) {
+			/*
+			 * RR tasks need a special form of timeslice management.
+			 * FIFO tasks have no timeslices.
+			 */
+			if ((p->policy == SCHED_RR) && !--p->time_slice) {
+				p->time_slice = TASK_TIMESLICE(p);
+				p->first_time_slice = 0;
+				set_tsk_need_resched(p);
+
+				/* put it at the end of the queue: */
+				dequeue_task(p, rq->active);
+				enqueue_task(p, rq->active);
+			}
+			goto out;
+		}
+	}
+
 	/*
 	 * The task was running during this tick - update the
 	 * time slice counter and the sleep average. Note: we
@@ -805,7 +842,7 @@ asmlinkage void schedule(void)
 {
 	task_t *prev, *next;
 	runqueue_t *rq;
-	prio_array_t *array;
+	prio_array_t *array, *s_array, *o_array;
 	list_t *queue;
 	int idx;
 
@@ -846,6 +883,10 @@ pick_next_task:
 		goto switch_tasks;
 	}
 
+	// NEEDE REMAKE TO USE SHORT
+	// CHANGE THE WAY TO CHECK IF NO MORE ACTIVE PROCESSES EXIST
+	s_array = rq->active_short;
+	o_array = rq->overdue_short;
 	array = rq->active;
 	if (unlikely(!array->nr_active)) {
 		/*
@@ -857,8 +898,25 @@ pick_next_task:
 		rq->expired_timestamp = 0;
 	}
 
-	idx = sched_find_first_bit(array->bitmap);
-	queue = array->queue + idx;
+	// CHANGE THE WAY TO FIND THE NEXT PROCESS TO LOAD
+	if(array->nr_active){
+		idx = sched_find_first_bit(array->bitmap);
+		if (idx<MAX_USER_RT_PRIO)
+			queue = array->queue + idx;
+		else if(s_array->nr_active){
+			idx = sched_find_first_bit(s_array->bitmap);
+			queue = s_array->queue + idx;
+		}
+		else
+			queue = array->queue + idx;
+	}
+	else if(s_array->nr_active){
+		idx = sched_find_first_bit(s_array->bitmap);
+		queue = s_array->queue + idx;
+	}
+	else
+		queue = o_array->queue;
+
 	next = list_entry(queue->next, task_t, run_list);
 
 switch_tasks:
@@ -1209,7 +1267,7 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	retval = 0;
 	p->policy = policy;
 	p->rt_priority = lp.sched_priority;
-	if (policy == SCHED_FIFO || policy== SCHED_RR)								// SHORT SCHED
+	if (policy == SCHED_FIFO || policy == SCHED_RR)								// SHORT SCHED
 		p->prio = MAX_USER_RT_PRIO-1 - p->rt_priority;
 	else if (policy == SCHED_SHORT)												// SHORT SCHED
 		p->prio = lp.sched_short_prio;
@@ -1436,6 +1494,9 @@ asmlinkage long sys_sched_get_priority_max(int policy)
 	case SCHED_OTHER:
 		ret = 0;
 		break;
+	case SCHED_SHORT:
+		ret = MAX_SHORT_PRIO-1;
+		break;
 	}
 	return ret;
 }
@@ -1447,6 +1508,7 @@ asmlinkage long sys_sched_get_priority_min(int policy)
 	switch (policy) {
 	case SCHED_FIFO:
 	case SCHED_RR:
+	case SCHED_SHORT:
 		ret = 1;
 		break;
 	case SCHED_OTHER:
@@ -1641,7 +1703,7 @@ void __init sched_init(void)
 		rq->active = rq->arrays;
 		rq->expired = rq->arrays + 1;
 		rq->active_short = rq->arrays + 2;										// SHORT SCHED
-		rq->expired_short = rq->arrays + 3;
+		rq->overdue_short = rq->arrays + 3;
 		spin_lock_init(&rq->lock);
 		INIT_LIST_HEAD(&rq->migration_queue);
 
