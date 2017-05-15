@@ -138,7 +138,7 @@ struct runqueue {
 	unsigned long nr_running, nr_switches, expired_timestamp;
 	signed long nr_uninterruptible;
 	task_t *curr, *idle;
-	prio_array_t *active, *expired,*active_short,*expired_short, arrays[2];
+	prio_array_t *active, *expired,*active_short,*expired_short, arrays[2];		// SHORT SCHED
 	int prev_nr_running[NR_CPUS];
 	task_t *migration_thread;
 	list_t migration_queue;
@@ -1160,14 +1160,6 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	 * To be able to change p->policy safely, the apropriate
 	 * runqueue lock must be held.
 	 */
-
-	/**
-	 * 0 is SCHED_OTHER
-	 * 1 is SCHED_FIFO
-	 * 2 is SCHED_RR
-	 * 3 is	SCHED_SHORT
-	 * 4 is	SCHED_OVRD_SHORT
-	 */
 	rq = task_rq_lock(p, &flags);
 
 	if (policy < 0)
@@ -1175,7 +1167,7 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	else {
 		retval = -EINVAL;
 		if (policy != SCHED_FIFO && policy != SCHED_RR &&
-				policy != SCHED_OTHER)
+				policy != SCHED_OTHER && policy != SCHED_SHORT)					// SHORT SCHED
 			goto out_unlock;
 	}
 
@@ -1184,10 +1176,18 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	 * 1..MAX_USER_RT_PRIO-1, valid priority for SCHED_OTHER is 0.
 	 */
 	retval = -EINVAL;
-	if (lp.sched_priority < 0 || lp.sched_priority > MAX_USER_RT_PRIO-1)
-		goto out_unlock;
-	if ((policy == SCHED_OTHER) != (lp.sched_priority == 0))
-		goto out_unlock;
+	if(policy != SCHED_SHORT){													// SHORT SCHED
+		if (lp.sched_priority < 0 || lp.sched_priority > MAX_USER_RT_PRIO-1)
+			goto out_unlock;
+		if ((policy == SCHED_OTHER) != (lp.sched_priority == 0))
+			goto out_unlock;
+	}
+	else{																		// SHORT SCHED
+		if (lp.sched_short_prio < 0 || lp.sched_short_prio > MAX_SHORT_PRIO-1)
+			goto out_unlock;
+		if (lp.requested_time < 1 || lp.requested_time > MAX_SHORT_TIME)
+			goto out_unlock;
+	}
 
 	retval = -EPERM;
 	if ((policy == SCHED_FIFO || policy == SCHED_RR) &&
@@ -1196,6 +1196,8 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	if ((current->euid != p->euid) && (current->euid != p->uid) &&
 	    !capable(CAP_SYS_NICE))
 		goto out_unlock;
+	if ((p->policy == SCHED_SHORT))												// SHORT SCHED
+		goto out_unlock;
 
 	array = p->array;
 	if (array)
@@ -1203,8 +1205,11 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	retval = 0;
 	p->policy = policy;
 	p->rt_priority = lp.sched_priority;
-	if (policy != SCHED_OTHER)
+	if (policy == SCHED_FIFO || policy== SCHED_RR)								// SHORT SCHED
 		p->prio = MAX_USER_RT_PRIO-1 - p->rt_priority;
+	else if (policy == SCHED_SHORT)												// SHORT SCHED
+		p->prio = lp.sched_short_prio;
+		p->requested_time=lp.requested_time;
 	else
 		p->prio = p->static_prio;
 	if (array)

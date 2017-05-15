@@ -119,13 +119,11 @@ extern unsigned long nr_uninterruptible(void);
 #define SCHED_OTHER			0
 #define SCHED_FIFO			1
 #define SCHED_RR			2
-#define SCHED_SHORT			3
-#define SCHED_OVRD_SHORT	4
+#define SCHED_SHORT			5
 
 struct sched_param {
 	int sched_priority;		// ignored for SHORT processes
 	int requested_time;		// between 1-3000
-	int curr_time;			// the time left
 	int sched_short_prio;	//	between 0-139
 };
 
@@ -184,6 +182,9 @@ extern int current_is_keventd(void);
 
 #define MAX_USER_RT_PRIO	100
 #define MAX_RT_PRIO		MAX_USER_RT_PRIO
+
+#define MAX_SHORT_PRIO		140
+#define MAX_SHORT_TIME		3000
 
 #define MAX_PRIO		(MAX_RT_PRIO + 40)
 
@@ -345,6 +346,13 @@ struct task_struct {
 	 */
 	unsigned int cpu;
 	int prio, static_prio;
+	/*
+	 * added for SHORT porcess
+	 */
+	int requested_time;
+	int current_time;
+
+
 	list_t run_list;
 	prio_array_t *array;
 
