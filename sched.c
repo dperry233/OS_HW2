@@ -138,7 +138,7 @@ struct runqueue {
 	unsigned long nr_running, nr_switches, expired_timestamp;
 	signed long nr_uninterruptible;
 	task_t *curr, *idle;
-	prio_array_t *active, *expired, arrays[2];
+	prio_array_t *active, *expired,*active_short,*expired_short, arrays[4];		// SHORT SCHED
 	int prev_nr_running[NR_CPUS];
 	task_t *migration_thread;
 	list_t migration_queue;
@@ -255,9 +255,12 @@ static inline int effective_prio(task_t *p)
 static inline void activate_task(task_t *p, runqueue_t *rq)
 {
 	unsigned long sleep_time = jiffies - p->sleep_timestamp;
-	prio_array_t *array = rq->active;
-
-	if (!rt_task(p) && sleep_time) {
+	if (p->policy == SCHED_SHORT){
+		prio_array_t *array = rq->active_short;									// SHORT SCHED
+	}
+	else{
+		prio_array_t *array = rq->active;
+		if (!rt_task(p) && sleep_time) {
 		/*
 		 * This code gives a bonus to interactive tasks. We update
 		 * an 'average sleep time' value here, based on
@@ -1190,7 +1193,7 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	}
 
 	retval = -EPERM;
-	if ((policy == SCHED_FIFO || policy == SCHED_RR) &&
+	if ((policy == SCHED_FIFO || policy == SCHED_RR || policy == SCHED_SHORT) &&// SHORT SCHED
 	    !capable(CAP_SYS_NICE))
 		goto out_unlock;
 	if ((current->euid != p->euid) && (current->euid != p->uid) &&
@@ -1636,10 +1639,12 @@ void __init sched_init(void)
 		rq = cpu_rq(i);
 		rq->active = rq->arrays;
 		rq->expired = rq->arrays + 1;
+		rq->active_short = rq->arrays + 2;										// SHORT SCHED
+		rq->expired_short = rq->arrays + 3;
 		spin_lock_init(&rq->lock);
 		INIT_LIST_HEAD(&rq->migration_queue);
 
-		for (j = 0; j < 2; j++) {
+		for (j = 0; j < 4; j++) {
 			array = rq->arrays + j;
 			for (k = 0; k < MAX_PRIO; k++) {
 				INIT_LIST_HEAD(array->queue + k);
