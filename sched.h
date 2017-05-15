@@ -351,7 +351,7 @@ struct task_struct {
 	 */
 	int requested_time;
 	int current_time;
-
+	bool overdue;
 
 	list_t run_list;
 	prio_array_t *array;
@@ -537,6 +537,9 @@ extern struct exec_domain	default_exec_domain;
     lock_depth:		-1,						\
     prio:		MAX_PRIO-20,					\
     static_prio:	MAX_PRIO-20,					\
+	requested_time: 0							\
+	current_time:	0							\
+	overdue:		false
     policy:		SCHED_OTHER,					\
     cpus_allowed:	-1,						\
     cpus_allowed_mask:	-1,						\
