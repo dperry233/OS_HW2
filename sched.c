@@ -112,7 +112,7 @@
 #define TASK_TIMESLICE(p) (MIN_TIMESLICE + \
 	((MAX_TIMESLICE - MIN_TIMESLICE) * (MAX_PRIO-1-(p)->static_prio)/39))
 
-#define OVERSHORT_TIMESLICE(p) (10*(140-(p)->prio)))							// SHORT SCHED
+#define OVERSHORT_TIMESLICE(p) (10*(140-((p)->prio)))							// SHORT SCHED
 
 
 /*
@@ -761,9 +761,9 @@ void scheduler_tick(int user_tick, int system)
 	// DEALS WITH SCHED_SHORT
 	if (p->policy == SCHED_SHORT){
 		if(!p->overdue){
-			if ((++(p->current_time)) == p->requested_time)){
+			if ((++(p->current_time)) == (p->requested_time)){
 				// the SHORT is now become OVERDUE
-				p->overdue=true;
+				p->overdue=1;
 				p->prio=0;							// all overdue are equal prio
 				dequeue_task(p, rq->active_short);
 				enqueue_task(p, rq->overdue_short);
