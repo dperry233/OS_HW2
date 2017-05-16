@@ -1269,9 +1269,10 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	p->rt_priority = lp.sched_priority;
 	if (policy == SCHED_FIFO || policy == SCHED_RR)								// SHORT SCHED
 		p->prio = MAX_USER_RT_PRIO-1 - p->rt_priority;
-	else if (policy == SCHED_SHORT)												// SHORT SCHED
+	else if (policy == SCHED_SHORT){												// SHORT SCHED
 		p->prio = lp.sched_short_prio;
 		p->requested_time=lp.requested_time;
+		}
 	else
 		p->prio = p->static_prio;
 	if (array)
