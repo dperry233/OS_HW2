@@ -538,9 +538,6 @@ extern struct exec_domain	default_exec_domain;
     lock_depth:		-1,						\
     prio:		MAX_PRIO-20,					\
     static_prio:	MAX_PRIO-20,					\
-	requested_time: 0							\
-	current_time:	0							\
-	overdue:	0							\
     policy:		SCHED_OTHER,					\
     cpus_allowed:	-1,						\
     cpus_allowed_mask:	-1,						\
@@ -573,6 +570,9 @@ extern struct exec_domain	default_exec_domain;
     blocked:		{{0}},						\
     alloc_lock:		SPIN_LOCK_UNLOCKED,				\
     journal_info:	NULL,						\
+	requested_time: 0							\
+	current_time:	0							\
+	overdue:	0							\
 }
 
 
