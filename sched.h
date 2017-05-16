@@ -570,9 +570,9 @@ extern struct exec_domain	default_exec_domain;
     blocked:		{{0}},						\
     alloc_lock:		SPIN_LOCK_UNLOCKED,				\
     journal_info:	NULL,						\
-	requested_time: 0							\
-	current_time:	0							\
-	overdue:	0							\
+	requested_time: 0,							\
+	current_time:	0,							\
+	overdue:	0,							\
 }
 
 
