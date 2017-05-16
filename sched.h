@@ -349,9 +349,7 @@ struct task_struct {
 	/*
 	 * added for SHORT porcess
 	 */
-	int requested_time;
-	int current_time;
-	int overdue;
+
 
 	list_t run_list;
 	prio_array_t *array;
@@ -464,6 +462,9 @@ struct task_struct {
 
 /* journalling filesystem info */
 	void *journal_info;
+	int requested_time;
+	int current_time;
+	int overdue;
 };
 
 /*
