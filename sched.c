@@ -1546,7 +1546,7 @@ int sys_short_remaining_time(pid_t pid) {
 		if(p->overdue == 0)
 			return p->requested_time - p->current_time;
 		else
-			return time_slice;
+			return p->time_slice;
 	}
 	return -EINVAL;
 }
