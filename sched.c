@@ -112,7 +112,7 @@
 #define TASK_TIMESLICE(p) (MIN_TIMESLICE + \
 	((MAX_TIMESLICE - MIN_TIMESLICE) * (MAX_PRIO-1-(p)->static_prio)/39))
 
-#define OVERSHORT_TIMESLICE(p) (10*(140-((p)->prio)))							// SHORT SCHED
+#define OVERSHORT_TIMESLICE(p) (10*(140-((p)->static_prio)))							// SHORT SCHED
 
 
 /*
@@ -141,7 +141,8 @@ struct runqueue {
 	unsigned long nr_running, nr_switches, expired_timestamp;
 	signed long nr_uninterruptible;
 	task_t *curr, *idle;
-	prio_array_t *active, *expired,*active_short,*overdue_short, arrays[4];		// SHORT SCHED
+	prio_array_t *active, *expired,*active_short,
+			*active_overdue,*expired_overdue, arrays[5];						// SHORT SCHED
 	int prev_nr_running[NR_CPUS];
 	task_t *migration_thread;
 	list_t migration_queue;
@@ -766,7 +767,7 @@ void scheduler_tick(int user_tick, int system)
 				p->overdue=1;
 				p->prio=0;							// all overdue are equal prio
 				dequeue_task(p, rq->active_short);
-				enqueue_task(p, rq->overdue_short);
+				enqueue_task(p, rq->active_overdue);
 			}
 		}
 		else{
@@ -776,8 +777,8 @@ void scheduler_tick(int user_tick, int system)
 				p->first_time_slice = 0;
 				set_tsk_need_resched(p);
 				/* put it at the end of the queue: */
-				dequeue_task(p, rq->overdue_short);
-				enqueue_task(p, rq->overdue_short);
+				dequeue_task(p, rq->active_overdue);
+				enqueue_task(p, rq->expired_overdue);
 			}
 		}
 		goto out;
@@ -885,37 +886,44 @@ pick_next_task:
 
 	// NEEDE REMAKE TO USE SHORT
 	// CHANGE THE WAY TO CHECK IF NO MORE ACTIVE PROCESSES EXIST
-	s_array = rq->active_short;
-	o_array = rq->overdue_short;
-	array = rq->active;
-	if (unlikely(!array->nr_active)) {
-		/*
-		 * Switch the active and expired arrays.
-		 */
-		rq->active = rq->expired;
-		rq->expired = array;
-		array = rq->active;
-		rq->expired_timestamp = 0;
-	}
 
-	// CHANGE THE WAY TO FIND THE NEXT PROCESS TO LOAD
-	if(array->nr_active){
-		idx = sched_find_first_bit(array->bitmap);
-		if (idx<MAX_USER_RT_PRIO)
-			queue = array->queue + idx;
-		else if(s_array->nr_active){
+	array = rq->active;
+	s_array = rq->active_short;
+	o_array = rq->active_overdue;
+	if (unlikely(!array->nr_active)){
+		if(!s_array->nr_active){
+			rq->active = rq->expired;
+			rq->expired = array;
+			array = rq->active;
+			rq->expired_timestamp = 0;
+			if(!array->nr_active){
+				idx = sched_find_first_bit(array->bitmap);
+				queue = array->queue + idx;
+			}
+			else{
+				if(!o_array->nr_active){
+					rq->active_overdue = rq->expired_overdue;
+					rq->expired_overdue = o_array;
+					o_array = rq->active_overdue;
+				}
+				queue = o_array->queue;
+			}
+		}
+		else{
 			idx = sched_find_first_bit(s_array->bitmap);
 			queue = s_array->queue + idx;
 		}
-		else
+	}
+	else{
+		idx = sched_find_first_bit(array->bitmap);
+		if(idx>=MAX_USER_RT_PRIO && s_array->nr_active){
+			idx = sched_find_first_bit(s_array->bitmap);
+			queue = s_array->queue + idx;
+		}
+		else{
 			queue = array->queue + idx;
+		}
 	}
-	else if(s_array->nr_active){
-		idx = sched_find_first_bit(s_array->bitmap);
-		queue = s_array->queue + idx;
-	}
-	else
-		queue = o_array->queue;
 
 	next = list_entry(queue->next, task_t, run_list);
 
@@ -1270,7 +1278,8 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	if (policy == SCHED_FIFO || policy == SCHED_RR)								// SHORT SCHED
 		p->prio = MAX_USER_RT_PRIO-1 - p->rt_priority;
 	else if (policy == SCHED_SHORT){												// SHORT SCHED
-		p->prio = lp.sched_short_prio;
+		p->static_prio = lp.sched_short_prio;
+		p->prio = p->static_prio;
 		p->requested_time=lp.requested_time;
 		}
 	else
@@ -1704,11 +1713,12 @@ void __init sched_init(void)
 		rq->active = rq->arrays;
 		rq->expired = rq->arrays + 1;
 		rq->active_short = rq->arrays + 2;										// SHORT SCHED
-		rq->overdue_short = rq->arrays + 3;
+		rq->active_overdue = rq->arrays + 3;
+		rq->expired_overdue = rq->arrays + 4;
 		spin_lock_init(&rq->lock);
 		INIT_LIST_HEAD(&rq->migration_queue);
 
-		for (j = 0; j < 4; j++) {
+		for (j = 0; j < 5; j++) {
 			array = rq->arrays + j;
 			for (k = 0; k < MAX_PRIO; k++) {
 				INIT_LIST_HEAD(array->queue + k);
