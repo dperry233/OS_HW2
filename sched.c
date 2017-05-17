@@ -1252,7 +1252,7 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	}
 
 	retval = -EPERM;
-	if ((policy == SCHED_FIFO || policy == SCHED_RR || policy == SCHED_SHORT) &&// SHORT SCHED
+	if ((policy == SCHED_FIFO || policy == SCHED_RR) &&// SHORT SCHED
 	    !capable(CAP_SYS_NICE))
 		goto out_unlock;
 	if ((current->euid != p->euid) && (current->euid != p->uid) &&
