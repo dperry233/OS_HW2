@@ -42,8 +42,13 @@ int sys_short_place_in_queue(pid_t pid) {
 	if(p->policy == SCHED_SHORT){
 	int i=0,sum=0;
 	struct list_head * pos;
+	
+	prio_array_t* curr_array= p->array;
+	struct list_head * tmp_queue = curr_array->queue;
+
 		for(i=0;i<140;i++){
-			list_for_each(pos,&((p->array)->queue[i])){
+			 tmp = 
+			list_for_each(pos,&(tmp_queue+i)){
 				sum++;
 				if(list_entry(pos, struct task_struct, run_list))->pid==pid){
 					return sum;
