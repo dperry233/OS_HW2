@@ -896,7 +896,7 @@ pick_next_task:
 			rq->expired = array;
 			array = rq->active;
 			rq->expired_timestamp = 0;
-			if(!array->nr_active){
+			if(array->nr_active){
 				idx = sched_find_first_bit(array->bitmap);
 				queue = array->queue + idx;
 			}
