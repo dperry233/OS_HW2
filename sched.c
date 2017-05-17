@@ -1553,15 +1553,13 @@ int sys_short_remaining_time(pid_t pid) {
 
 int sys_short_place_in_queue(pid_t pid) {
 	task_t* p = find_task_by_pid(pid);
-	if(!p){
-		return -3; // the value of ESRCH
-	}
+	if(!p)
+		return -ESRCH;
 	if(p->policy == SCHED_SHORT){
-	int i=0,sum=0;
-	struct list_head * pos;
-
-	prio_array_t* array= p->array;
-	list_t* queue;
+		int i,sum=0;
+		struct list_head * pos;
+		prio_array_t* array = p->array;
+		list_t* queue;
 		for(i=0;i<140;i++){
 			queue = array->queue + i;
 			list_for_each(pos,queue){
@@ -1572,12 +1570,8 @@ int sys_short_place_in_queue(pid_t pid) {
 			}
 		}
 		return -10; // if it gets here then something is wrong
-
-
-
-	}else{ //if we are here it means p is not a short or overdue short
-		return -22;   //the value of EINVAL
-	}
+	} //if we are here it means p is not a short or overdue short
+	return -EINVAL;
 }
 
 
