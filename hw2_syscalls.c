@@ -1,6 +1,5 @@
 #include <linux/sched.h>
 
-
 int sys_is_short(pid_t pid) {
 	task_t* p = find_task_by_pid(pid);
 	if(!p){
@@ -15,7 +14,6 @@ int sys_is_short(pid_t pid) {
 	}
 
 }
-
 
 int sys_short_remaining_time(pid_t pid) {
 	task_t* p = find_task_by_pid(pid);
@@ -44,7 +42,7 @@ int sys_short_place_in_queue(pid_t pid) {
 	struct list_head * pos;
 	
 	prio_array_t* array= p->array;
-	list_t queue; = array->queue;
+	list_t queue = array->queue;
 		for(i=0;i<140;i++){
 			queue = array->queue + i;
 			list_for_each(pos,&(queue)){

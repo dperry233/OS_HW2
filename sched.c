@@ -262,7 +262,7 @@ static inline void activate_task(task_t *p, runqueue_t *rq)
 	prio_array_t *array;
 	if (p->policy == SCHED_SHORT){
 		if (p->overdue){
-			array = rq->overdue_short;
+			array = rq->active_overdue;
 		}
 		else{
 			array = rq->active_short;								// SHORT SCHED
