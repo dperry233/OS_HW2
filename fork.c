@@ -606,6 +606,13 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 			goto fork_out;
 	}
 
+	retval = -EACCES;
+	/**
+	 * Check if the process is overdue short
+	 */
+	if (current->policy == SCHED_SHORT && current->overdue == 1)
+		goto fork_out;
+
 	retval = -ENOMEM;
 	p = alloc_task_struct();
 	if (!p)
