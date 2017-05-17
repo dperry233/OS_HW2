@@ -1531,35 +1531,25 @@ asmlinkage long sys_sched_get_priority_min(int policy)
 
 int sys_is_short(pid_t pid) {
 	task_t* p = find_task_by_pid(pid);
-	if(!p){
-		return -3; // the value of ESRCH
-	}
-	if(p->policy == SCHED_SHORT&&p->overdue==0){
-		return 1;
-	}else if(p->policy == SCHED_SHORT&&p->overdue==1){
-		return 0;
-	}else{
-		return -22;   //the value of EINVAL
-	}
-
+	if(!p)
+		return -ESRCH;
+	if(p->policy == SCHED_SHORT)
+		return 1-p->overdue;
+	return -EINVAL;
 }
 
 int sys_short_remaining_time(pid_t pid) {
 	task_t* p = find_task_by_pid(pid);
-	if(!p){
-		return -3; // the value of ESRCH
+	if(!p)
+		return -ESRCH;
+	if(p->policy == SCHED_SHORT){
+		if(p->overdue == 0)
+			return p->requested_time - p->current_time;
+		else
+			return time_slice;
 	}
-	if(p->policy == SCHED_SHORT&&p->overdue==0){
-
-		return p->time_slice* HZ / 1000;
-	}else if(p->policy == SCHED_SHORT&&p->overdue==1){
-
-		return p->time_slice* HZ / 1000;
-	}else{
-		return -22;   //the value of EINVAL
-	}
+	return -EINVAL;
 }
-
 
 int sys_short_place_in_queue(pid_t pid) {
 	task_t* p = find_task_by_pid(pid);
