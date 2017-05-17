@@ -261,13 +261,10 @@ static inline void activate_task(task_t *p, runqueue_t *rq)
 	unsigned long sleep_time = jiffies - p->sleep_timestamp;
 	prio_array_t *array;
 	if (p->policy == SCHED_SHORT){
-		if (p->overdue){
+		if (p->overdue)
 			array = rq->active_overdue;
-		}
-		else{
+		else
 			array = rq->active_short;								// SHORT SCHED
-		}
-
 	}
 	else{
 		array = rq->active;
@@ -766,6 +763,7 @@ void scheduler_tick(int user_tick, int system)
 				// the SHORT is now become OVERDUE
 				p->overdue=1;
 				p->prio=0;							// all overdue are equal prio
+				set_tsk_need_resched(p);
 				dequeue_task(p, rq->active_short);
 				enqueue_task(p, rq->active_overdue);
 			}
