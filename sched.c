@@ -1554,7 +1554,7 @@ int sys_short_remaining_time(pid_t pid) {
 }
 
 int sys_short_place_in_queue(pid_t pid) {
-	/*
+	
 	task_t* p = find_task_by_pid(pid);
 	if(!p)
 		return -ESRCH;
@@ -1575,18 +1575,22 @@ int sys_short_place_in_queue(pid_t pid) {
 		i = sched_find_first_bit(array->bitmap);
 		for(;i<140;i++){
 			queue = array->queue + i;
-			list_for_each(pos,queue){
-				if((list_entry(pos, struct task_struct, run_list))->pid==pid){
-					task_rq_unlock(rq, &flags);
-					return sum;
+			if (!list_empty(queue)){
+			
+			
+				list_for_each(pos,queue){
+					if((list_entry(pos, struct task_struct, run_list))->pid==pid){
+						task_rq_unlock(rq, &flags);
+						return sum;
+					}
+					sum++;
 				}
-				sum++;
 			}
 		}
 		printk(KERN_EMERG "something wrong with syscall3\n");
 		return -10; // if it gets here then something is wrong
 	} //if we are here it means p is not a short or overdue short
-	*/
+	
 	return -EINVAL;
 }
 
