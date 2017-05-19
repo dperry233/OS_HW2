@@ -1341,7 +1341,7 @@ asmlinkage long sys_sched_getparam(pid_t pid, struct sched_param *param)
 	retval = -ESRCH;
 	if (!p)
 		goto out_unlock;
-	if(p-policy == SCHED_SHORT){
+	if(p->policy == SCHED_SHORT){
 		lp.requested_time = p->requested_time;
 		lp.sched_short_prio = p->static_prio;
 	}
@@ -1469,7 +1469,7 @@ asmlinkage long sys_sched_yield(void)
 	prio_array_t *array = current->array;
 	int i;
 
-	if (unlikely(rt_task(current) || current->policy == SCHED_SHORT) {
+	if (unlikely(rt_task(current)) || current->policy == SCHED_SHORT) {
 		list_del(&current->run_list);
 		list_add_tail(&current->run_list, array->queue + current->prio);
 		goto out_unlock;
