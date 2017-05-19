@@ -1577,10 +1577,10 @@ int sys_short_place_in_queue(pid_t pid) {
 	rq = task_rq(p);
 
 	rq = task_rq_lock(p, &flags);
-
+	if (p->state != TASK_RUNNING){
+		return -EINVAL;
+	}
 	
-
-
 	if(p->policy == SCHED_SHORT){
 		int i,sum=0;
 		struct list_head * pos;
@@ -1589,11 +1589,9 @@ int sys_short_place_in_queue(pid_t pid) {
 		i = sched_find_first_bit(array->bitmap);
 		printk(KERN_EMERG "syscall 3 initial index is %d\n",i);
 		for(;i<140;i++){
-		printk(KERN_EMERG "syscall 3 index is %d\n",i);
+			printk(KERN_EMERG "syscall 3 index is %d\n",i);
 			queue = array->queue + i;
 			if (!list_empty(queue)){
-			
-			
 				list_for_each(pos,queue){
 					if((list_entry(pos, struct task_struct, run_list))->pid==pid){
 						printk(KERN_EMERG "syscall 3 finishing with index  %d\n",i);
