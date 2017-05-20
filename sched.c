@@ -1570,9 +1570,9 @@ int sys_short_remaining_time(pid_t pid) {
 		return -ESRCH;
 	if(p->policy == SCHED_SHORT){
 		if(p->overdue == 0)
-			return p->requested_time - p->current_time;
+			return (p->requested_time - p->current_time)*1000/HZ;
 		else
-			return p->time_slice;
+			return p->time_slice*1000/HZ;
 	}
 	
 	return -EINVAL;
