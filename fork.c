@@ -747,6 +747,16 @@ int do_fork(unsigned long clone_flags, unsigned long stack_start,
 	}
 	__restore_flags(flags);
 
+	// here looks like a good spot to add this
+	if(current->policy == SCHED_SHORT){
+		p->current_time= (p->requested_time - p->current_time + 1) >> 1;
+		current->current_time =
+				(current->requested_time - current->current_time) >> 1;
+	}
+
+
+
+
 	/*
 	 * Ok, add it to the run-queues and make it
 	 * visible to the rest of the system.
