@@ -1554,8 +1554,11 @@ asmlinkage long sys_sched_get_priority_min(int policy)
 //SHORT
 
 int sys_is_short(pid_t pid) {
-	
-	task_t* p = find_task_by_pid(pid);
+	task_t* p;
+	if (current->pid == pid)
+		p=current;
+	else
+		p = find_task_by_pid(pid);
 	if(!p)
 		return -ESRCH;
 	if(p->policy == SCHED_SHORT)
