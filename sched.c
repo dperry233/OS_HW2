@@ -1571,13 +1571,13 @@ int sys_short_remaining_time(pid_t pid) {
 }
 
 int sys_short_place_in_queue(pid_t pid) {
-	printk(KERN_EMERG "syscall 3 start\n");
+	
 	task_t* p = find_task_by_pid(pid);
 	if(!p)
 		return -ESRCH;
 	
 	
-	printk(KERN_EMERG "syscall 3 process is in state %d \n",p->state);
+	
 	unsigned long flags;
 	runqueue_t *rq;
 	rq = task_rq(p);
@@ -1593,14 +1593,14 @@ int sys_short_place_in_queue(pid_t pid) {
 		prio_array_t* array = p->array;
 		list_t* queue;
 		i = sched_find_first_bit(array->bitmap);
-		printk(KERN_EMERG "syscall 3 initial index is %d\n",i);
+		
 		for(;i<140;i++){
-			printk(KERN_EMERG "syscall 3 index is %d\n",i);
+			
 			queue = array->queue + i;
 			if (!list_empty(queue)){
 				list_for_each(pos,queue){
 					if((list_entry(pos, struct task_struct, run_list))->pid==pid){
-						printk(KERN_EMERG "syscall 3 finishing with index  %d\n",i);
+						
 						task_rq_unlock(rq, &flags);
 						return sum;
 					}
@@ -1608,7 +1608,7 @@ int sys_short_place_in_queue(pid_t pid) {
 				}
 			}
 		}
-		printk(KERN_EMERG "something wrong with syscall3\n");
+		
 		return -10; // if it gets here then something is wrong
 	} //if we are here it means p is not a short or overdue short
 	
