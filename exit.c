@@ -613,7 +613,7 @@ repeat:
 				goto end_wait4;
 			case TASK_ZOMBIE:
 				if(current->policy == SCHED_SHORT && !current->overdue)
-					current->current_time-=p->current_time
+					current->current_time-=p->current_time;
 
 				current->times.tms_cutime += p->times.tms_utime + p->times.tms_cutime;
 				current->times.tms_cstime += p->times.tms_stime + p->times.tms_cstime;
