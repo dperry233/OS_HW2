@@ -762,9 +762,9 @@ void scheduler_tick(int user_tick, int system)
 			if ((++(p->current_time)) == (p->requested_time)){
 				// the SHORT is now become OVERDUE
 				p->overdue=1;
-				p->prio=0;							// all overdue are equal prio
 				set_tsk_need_resched(p);
 				dequeue_task(p, rq->active_short);
+				p->prio=0;							// all overdue are equal prio
 				enqueue_task(p, rq->active_overdue);
 			}
 		}
@@ -1469,7 +1469,13 @@ asmlinkage long sys_sched_yield(void)
 	prio_array_t *array = current->array;
 	int i;
 
-	if (unlikely(rt_task(current)) || current->policy == SCHED_SHORT) {
+	if (current->policy == SCHED_SHORT){
+		list_del(&current->run_list);
+		list_add_tail(&current->run_list, array->queue + current->prio);
+		goto out_unlock;
+	}
+
+	if (unlikely(rt_task(current))) {
 		list_del(&current->run_list);
 		list_add_tail(&current->run_list, array->queue + current->prio);
 		goto out_unlock;
