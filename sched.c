@@ -1555,6 +1555,7 @@ asmlinkage long sys_sched_get_priority_min(int policy)
 
 int sys_is_short(pid_t pid) {
 	task_t* p;
+	unsigned long flags;
 	runqueue_t *rq = task_rq(p);
 	rq = task_rq_lock(p, &flags);
 	if (current->pid == pid)
@@ -1575,6 +1576,7 @@ int sys_is_short(pid_t pid) {
 
 int sys_short_remaining_time(pid_t pid) {
 	task_t* p;
+	unsigned long flags;
 	runqueue_t *rq = task_rq(p);
 	rq = task_rq_lock(p, &flags);
 	if (current->pid == pid)
@@ -1602,6 +1604,7 @@ int sys_short_remaining_time(pid_t pid) {
 
 int sys_short_place_in_queue(pid_t pid) {
 	task_t* p;
+	unsigned long flags;
 	runqueue_t *rq = task_rq(p);
 	rq = task_rq_lock(p, &flags);
 	if (current->pid == pid)
@@ -1612,7 +1615,6 @@ int sys_short_place_in_queue(pid_t pid) {
 		task_rq_unlock(rq, &flags);
 		return -ESRCH;
 	}
-	unsigned long flags;
 	runqueue_t *rq = task_rq(p);
 	rq = task_rq_lock(p, &flags);
 	if (p->state != TASK_RUNNING){
