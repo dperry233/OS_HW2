@@ -782,7 +782,7 @@ void scheduler_tick(int user_tick, int system)
 				p->time_slice = OVERSHORT_TIMESLICE(p);
 				p->first_time_slice = 0;
 				set_tsk_need_resched(p);
-				/* put it at the end of the queue: */
+				/* put it at the expired queue: */
 				dequeue_task(p, rq->active_overdue);
 				enqueue_task(p, rq->expired_overdue);
 			}
@@ -1269,7 +1269,7 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	}
 
 	retval = -EPERM;
-	if ((policy == SCHED_FIFO || policy == SCHED_RR) &&// SHORT SCHED
+	if ((policy == SCHED_FIFO || policy == SCHED_RR) &&
 	    !capable(CAP_SYS_NICE))
 		goto out_unlock;
 	if ((current->euid != p->euid) && (current->euid != p->uid) &&
@@ -1546,6 +1546,7 @@ asmlinkage long sys_sched_get_priority_min(int policy)
 		break;
 	case SCHED_OTHER:
 		ret = 0;
+		break;
 	}
 	return ret;
 }
