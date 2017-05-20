@@ -1555,64 +1555,81 @@ asmlinkage long sys_sched_get_priority_min(int policy)
 
 int sys_is_short(pid_t pid) {
 	task_t* p;
+	runqueue_t *rq = task_rq(p);
+	rq = task_rq_lock(p, &flags);
 	if (current->pid == pid)
 		p=current;
 	else
 		p = find_task_by_pid(pid);
-	if(!p)
+	if(!p){
+		task_rq_unlock(rq, &flags);
 		return -ESRCH;
-	if(p->policy == SCHED_SHORT)
+	}
+	if(p->policy == SCHED_SHORT){
 		return 1-p->overdue;
-	
+		task_rq_unlock(rq, &flags);
+	}
+	task_rq_unlock(rq, &flags);
 	return -EINVAL;
 }
 
 int sys_short_remaining_time(pid_t pid) {
-	
-	task_t* p = find_task_by_pid(pid);
-	if(!p)
+	task_t* p;
+	runqueue_t *rq = task_rq(p);
+	rq = task_rq_lock(p, &flags);
+	if (current->pid == pid)
+		p=current;
+	else
+		p = find_task_by_pid(pid);
+	if(!p){
+		task_rq_unlock(rq, &flags);
 		return -ESRCH;
-	if(p->policy == SCHED_SHORT){
-		if(p->overdue == 0)
-			return (p->requested_time - p->current_time)*1000/HZ;
-		else
-			return p->time_slice*1000/HZ;
 	}
-	
+	if(p->policy == SCHED_SHORT){
+		if(p->overdue == 0){
+			task_rq_unlock(rq, &flags);
+			return (p->requested_time - p->current_time)*1000/HZ;
+		}
+		else{
+			task_rq_unlock(rq, &flags);
+			return p->time_slice*1000/HZ;
+		}
+
+	}
+	task_rq_unlock(rq, &flags);
 	return -EINVAL;
 }
 
 int sys_short_place_in_queue(pid_t pid) {
-	
-	task_t* p = find_task_by_pid(pid);
-	if(!p)
+	task_t* p;
+	runqueue_t *rq = task_rq(p);
+	rq = task_rq_lock(p, &flags);
+	if (current->pid == pid)
+		p=current;
+	else
+		p = find_task_by_pid(pid);
+	if(!p){
+		task_rq_unlock(rq, &flags);
 		return -ESRCH;
-	
-	
-	
+	}
 	unsigned long flags;
-	runqueue_t *rq;
-	rq = task_rq(p);
-
+	runqueue_t *rq = task_rq(p);
 	rq = task_rq_lock(p, &flags);
 	if (p->state != TASK_RUNNING){
+		task_rq_unlock(rq, &flags);
 		return -EINVAL;
 	}
-	
 	if(p->policy == SCHED_SHORT){
 		int i,sum=0;
 		struct list_head * pos;
 		prio_array_t* array = p->array;
 		list_t* queue;
 		i = sched_find_first_bit(array->bitmap);
-		
 		for(;i<140;i++){
-			
 			queue = array->queue + i;
 			if (!list_empty(queue)){
 				list_for_each(pos,queue){
 					if((list_entry(pos, struct task_struct, run_list))->pid==pid){
-						
 						task_rq_unlock(rq, &flags);
 						return sum;
 					}
@@ -1620,10 +1637,9 @@ int sys_short_place_in_queue(pid_t pid) {
 				}
 			}
 		}
-		
 		return -10; // if it gets here then something is wrong
 	} //if we are here it means p is not a short or overdue short
-	
+	task_rq_unlock(rq, &flags);
 	return -EINVAL;
 }
 
