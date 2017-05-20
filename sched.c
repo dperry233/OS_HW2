@@ -436,6 +436,14 @@ void wake_up_forked_process(task_t * p)
 void sched_exit(task_t * p)
 {
 	__cli();
+
+	if(current->policy == SCHED_SHORT){
+		if(!current->overdue){
+			current->current_time-=p->current_time;
+		}
+		return;
+	}
+
 	if (p->first_time_slice) {
 		current->time_slice += p->time_slice;
 		if (unlikely(current->time_slice > MAX_TIMESLICE))
