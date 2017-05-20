@@ -1615,8 +1615,6 @@ int sys_short_place_in_queue(pid_t pid) {
 		task_rq_unlock(rq, &flags);
 		return -ESRCH;
 	}
-	runqueue_t *rq = task_rq(p);
-	rq = task_rq_lock(p, &flags);
 	if (p->state != TASK_RUNNING){
 		task_rq_unlock(rq, &flags);
 		return -EINVAL;
