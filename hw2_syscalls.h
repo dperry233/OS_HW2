@@ -1,7 +1,11 @@
+#ifndef _HW2_SYSCALLS_H
+#define _HW2_SYSCALLS_H
+
+
 
 #include <errno.h>
 #include <termios.h>
-
+#include <stdlib.h>
 
 
 int is_short(pid_t pid) {
@@ -63,3 +67,4 @@ int short_place_in_queue(pid_t pid) {
 	return res;
 }
 
+#endif /*  HW2_SYSCALLS_H_ */
