@@ -462,6 +462,7 @@ struct task_struct {
 
 /* journalling filesystem info */
 	void *journal_info;
+	int org_requested_time;
 	unsigned int requested_time;
 	unsigned int current_time;
 	int overdue;
@@ -570,6 +571,7 @@ extern struct exec_domain	default_exec_domain;
     blocked:		{{0}},						\
     alloc_lock:		SPIN_LOCK_UNLOCKED,				\
     journal_info:	NULL,						\
+	org_requested_time: 0,						\
 	requested_time: 0,							\
 	current_time:	0,							\
 	overdue:	0,							\
