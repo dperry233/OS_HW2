@@ -1289,7 +1289,8 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	else if (policy == SCHED_SHORT){												// SHORT SCHED
 		p->static_prio = lp.sched_short_prio;
 		p->prio = p->static_prio;
-		p->requested_time=(lp.requested_time * HZ) / 1000;
+		p->org_requested_time=lp.requested_time;
+		p->requested_time=(p->org_requested_time * HZ) / 1000;
 		}
 	else
 		p->prio = p->static_prio;
