@@ -73,6 +73,7 @@ extern unsigned long avenrun[];		/* Load averages */
 
 #define CT_TO_SECS(x)	((x) / HZ)
 #define CT_TO_USECS(x)	(((x) % HZ) * 1000000/HZ)
+#define CT_TO_MLSECS(x)	(((x) * 1000) / HZ)
 
 extern int nr_threads;
 extern int last_pid;

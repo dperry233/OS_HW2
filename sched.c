@@ -1350,6 +1350,7 @@ asmlinkage long sys_sched_getparam(pid_t pid, struct sched_param *param)
 	if (!p)
 		goto out_unlock;
 	if(p->policy == SCHED_SHORT){
+		lp.requested_time = p->org_requested_time;
 		lp.sched_short_prio = p->static_prio;
 	}
 	else{
@@ -1589,9 +1590,11 @@ int sys_short_remaining_time(pid_t pid) {
 	if(p->policy == SCHED_SHORT){
 		if(p->overdue == 0){
 			task_rq_unlock(rq, &flags);
+			return CT_TO_MLSECS(p->requested_time - p->current_time);
 		}
 		else{
 			task_rq_unlock(rq, &flags);
+			return CT_TO_MLSECS(p->time_slice);
 		}
 
 	}
