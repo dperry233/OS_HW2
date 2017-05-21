@@ -462,8 +462,8 @@ struct task_struct {
 
 /* journalling filesystem info */
 	void *journal_info;
-	int requested_time;
-	int current_time;
+	unsigned int requested_time;
+	unsigned int current_time;
 	int overdue;
 };
 

@@ -112,7 +112,7 @@
 #define TASK_TIMESLICE(p) (MIN_TIMESLICE + \
 	((MAX_TIMESLICE - MIN_TIMESLICE) * (MAX_PRIO-1-(p)->static_prio)/39))
 
-#define OVERSHORT_TIMESLICE(p) ((HZ/1000)*10*(140-((p)->static_prio)))							// SHORT SCHED
+#define OVERSHORT_TIMESLICE(p) (HZ*1000*10*(140-((p)->static_prio)))							// SHORT SCHED
 
 
 /*
@@ -1289,7 +1289,8 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 	else if (policy == SCHED_SHORT){												// SHORT SCHED
 		p->static_prio = lp.sched_short_prio;
 		p->prio = p->static_prio;
-		p->requested_time=lp.requested_time*HZ/1000;
+		p->requested_time=lp.requested_time;
+		p->requested_time*=1000*HZ;
 		}
 	else
 		p->prio = p->static_prio;
@@ -1350,7 +1351,7 @@ asmlinkage long sys_sched_getparam(pid_t pid, struct sched_param *param)
 	if (!p)
 		goto out_unlock;
 	if(p->policy == SCHED_SHORT){
-		lp.requested_time = p->requested_time*1000/HZ;
+		lp.requested_time = p->requested_time/(HZ*1000);
 		lp.sched_short_prio = p->static_prio;
 	}
 	else{
@@ -1590,11 +1591,11 @@ int sys_short_remaining_time(pid_t pid) {
 	if(p->policy == SCHED_SHORT){
 		if(p->overdue == 0){
 			task_rq_unlock(rq, &flags);
-			return (p->requested_time - p->current_time)*1000/HZ;
+			return (p->requested_time - p->current_time)/(HZ*1000);
 		}
 		else{
 			task_rq_unlock(rq, &flags);
-			return p->time_slice*1000/HZ;
+			return p->time_slice/(HZ*1000);
 		}
 
 	}
