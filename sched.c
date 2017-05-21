@@ -767,7 +767,7 @@ void scheduler_tick(int user_tick, int system)
 	// DEALS WITH SCHED_SHORT
 	if (p->policy == SCHED_SHORT){
 		if(!p->overdue){
-			if ((++(p->current_time)) == (p->requested_time)){
+			if (++p->current_time == (p->requested_time)){
 				// the SHORT is now become OVERDUE
 				p->overdue=1;
 				set_tsk_need_resched(p);
@@ -1568,8 +1568,8 @@ int sys_is_short(pid_t pid) {
 		return -ESRCH;
 	}
 	if(p->policy == SCHED_SHORT){
-		return 1-p->overdue;
 		task_rq_unlock(rq, &flags);
+		return 1-p->overdue;
 	}
 	task_rq_unlock(rq, &flags);
 	return -EINVAL;
