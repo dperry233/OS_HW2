@@ -112,7 +112,7 @@
 #define TASK_TIMESLICE(p) (MIN_TIMESLICE + \
 	((MAX_TIMESLICE - MIN_TIMESLICE) * (MAX_PRIO-1-(p)->static_prio)/39))
 
-#define OVERSHORT_TIMESLICE(p) ((10*(140-((p)->static_prio))* HZ) / 1000)							// SHORT SCHED
+#define OVERSHORT_TIMESLICE(p) ((10*(140-((p)->static_prio))* HZ) / 1000 + 1)							// SHORT SCHED
 
 
 /*
@@ -142,7 +142,7 @@ struct runqueue {
 	signed long nr_uninterruptible;
 	task_t *curr, *idle;
 	prio_array_t *active, *expired,*active_short,
-			*active_overdue,*expired_overdue, arrays[5];						// SHORT SCHED
+			*active_overdue, arrays[4];						// SHORT SCHED
 	int prev_nr_running[NR_CPUS];
 	task_t *migration_thread;
 	list_t migration_queue;
@@ -784,7 +784,7 @@ void scheduler_tick(int user_tick, int system)
 				set_tsk_need_resched(p);
 				/* put it at the expired queue: */
 				dequeue_task(p, rq->active_overdue);
-				enqueue_task(p, rq->expired_overdue);
+				enqueue_task(p, rq->active_overdue);
 			}
 		}
 		goto out;
@@ -907,11 +907,6 @@ pick_next_task:
 				queue = array->queue + idx;
 			}
 			else{
-				if(!o_array->nr_active){
-					rq->active_overdue = rq->expired_overdue;
-					rq->expired_overdue = o_array;
-					o_array = rq->active_overdue;
-				}
 				queue = o_array->queue;
 			}
 		}
@@ -1839,11 +1834,10 @@ void __init sched_init(void)
 		rq->expired = rq->arrays + 1;
 		rq->active_short = rq->arrays + 2;										// SHORT SCHED
 		rq->active_overdue = rq->arrays + 3;
-		rq->expired_overdue = rq->arrays + 4;
 		spin_lock_init(&rq->lock);
 		INIT_LIST_HEAD(&rq->migration_queue);
 
-		for (j = 0; j < 5; j++) {
+		for (j = 0; j < 4; j++) {
 			array = rq->arrays + j;
 			for (k = 0; k < MAX_PRIO; k++) {
 				INIT_LIST_HEAD(array->queue + k);
