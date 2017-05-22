@@ -773,7 +773,7 @@ void scheduler_tick(int user_tick, int system)
 				set_tsk_need_resched(p);
 				dequeue_task(p, rq->active_short);
 				p->time_slice = OVERSHORT_TIMESLICE(p);
-				p->prio=0;							// all overdue are equal prio
+				p->prio=1;							// all overdue are equal prio
 				enqueue_task(p, rq->active_overdue);
 			}
 		}
@@ -908,7 +908,8 @@ pick_next_task:
 				queue = array->queue + idx;
 			}
 			else{
-				queue = o_array->queue;
+				idx = sched_find_first_bit(o_array->bitmap);
+				queue = o_array->queue + idx;
 			}
 		}
 		else{
@@ -1287,6 +1288,7 @@ static int setscheduler(pid_t pid, int policy, struct sched_param *param)
 		p->prio = p->static_prio;
 		p->org_requested_time=lp.requested_time;
 		p->requested_time=(p->org_requested_time * HZ) / 1000;
+		set_tsk_need_resched(current);
 		}
 	else
 		p->prio = p->static_prio;
