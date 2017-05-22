@@ -1592,7 +1592,6 @@ int sys_short_remaining_time(pid_t pid) {
 			task_rq_unlock(rq, &flags);
 			return CT_TO_MLSECS(p->time_slice);
 		}
-
 	}
 	task_rq_unlock(rq, &flags);
 	return -EINVAL;
