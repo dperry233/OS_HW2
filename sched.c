@@ -772,6 +772,7 @@ void scheduler_tick(int user_tick, int system)
 				p->overdue=1;
 				set_tsk_need_resched(p);
 				dequeue_task(p, rq->active_short);
+				p->time_slice = OVERSHORT_TIMESLICE(p);
 				p->prio=0;							// all overdue are equal prio
 				enqueue_task(p, rq->active_overdue);
 			}

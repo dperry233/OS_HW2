@@ -8,6 +8,15 @@
 #include <stdlib.h>
 
 
+#define SCHED_OTHER		0
+#define SCHED_FIFO		1
+#define SCHED_RR		2
+#define SCHED_SHORT     5
+
+typedef struct sched_param {
+    int sched_priority, requested_time, sched_short_prio;
+} sched_param_t;
+
 int is_short(pid_t pid) {
 	if(pid<0){
 		errno = ESRCH;
